@@ -1,31 +1,40 @@
 import * as React from "react";
 import { StyleSheet } from "react-native";
 import Constants from "expo-constants";
-import Animated from "react-native-reanimated";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  SharedValue,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 import { MIN_HEADER_HEIGHT, HEADER_DELTA } from "./Model";
 import { BUTTON_HEIGHT } from "./ShufflePlay";
 
 interface HeaderProps {
   artist: string;
-  y: Animated.Value<number>;
+  y: SharedValue<number>;
 }
 
-const { interpolate, Extrapolate } = Animated;
-
 export default ({ artist, y }: HeaderProps) => {
-  const opacity = interpolate(y, {
-    inputRange: [HEADER_DELTA - 16, HEADER_DELTA],
-    outputRange: [0, 1],
-    extrapolate: Extrapolate.CLAMP,
-  });
-  const textOpacity = interpolate(y, {
-    inputRange: [HEADER_DELTA - 8, HEADER_DELTA - 4],
-    outputRange: [0, 1],
-    extrapolate: Extrapolate.CLAMP,
-  });
+  const style = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      y.value,
+      [HEADER_DELTA - 8, HEADER_DELTA - 2],
+      [0, 1],
+      Extrapolation.CLAMP
+    ),
+  }));
+  const titleStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      y.value,
+      [HEADER_DELTA - 8, HEADER_DELTA - 2],
+      [0, 1],
+      Extrapolation.CLAMP
+    ),
+  }));
   return (
-    <Animated.View style={[styles.container, { opacity }]}>
-      <Animated.Text style={[styles.title, { opacity: textOpacity }]}>{artist}</Animated.Text>
+    <Animated.View style={[styles.container, style]}>
+      <Animated.Text style={[styles.title, titleStyle]}>{artist}</Animated.Text>
     </Animated.View>
   );
 };

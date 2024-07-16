@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Asset } from "expo-asset";
-import { StatusBar } from "react-native";
-import { AppLoading } from "expo";
-
+import { ActivityIndicator, StatusBar } from "react-native";
 import Album from "./components/Album";
 import { Album as AlbumModel } from "./components/Model";
 
@@ -37,7 +35,7 @@ export default () => {
     })();
   });
   if (!ready) {
-    return <AppLoading />;
+    return <ActivityIndicator />;
   }
   return (
     <>

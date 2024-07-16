@@ -1,50 +1,55 @@
 import * as React from "react";
-import {
-  StyleSheet, View,
-} from "react-native";
+import { StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated from "react-native-reanimated";
-import { onScroll } from "react-native-redash";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  SharedValue,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 
-import {
-  Album, MAX_HEADER_HEIGHT, MIN_HEADER_HEIGHT,
-} from "./Model";
+import { Album, MAX_HEADER_HEIGHT, MIN_HEADER_HEIGHT } from "./Model";
 import Track from "./Track";
 import ShufflePlay, { BUTTON_HEIGHT } from "./ShufflePlay";
 import Header from "./Header";
 
 interface ContentProps {
   album: Album;
-  y: Animated.Value<number>;
+  y: SharedValue<number>;
 }
 
-const {
-  interpolate, Extrapolate,
-} = Animated;
-
 export default ({ album: { artist, tracks }, y }: ContentProps) => {
-  const height = interpolate(y, {
-    inputRange: [-MAX_HEADER_HEIGHT, -BUTTON_HEIGHT / 2],
-    outputRange: [0, MAX_HEADER_HEIGHT + BUTTON_HEIGHT],
-    extrapolate: Extrapolate.CLAMP,
-  });
-  const opacity = interpolate(y, {
-    inputRange: [-MAX_HEADER_HEIGHT / 2, 0, MAX_HEADER_HEIGHT / 2],
-    outputRange: [0, 1, 0],
-    extrapolate: Extrapolate.CLAMP,
-  });
+  const gradientStyle = useAnimatedStyle(() => ({
+    height: interpolate(
+      y.value,
+      [-MAX_HEADER_HEIGHT, -BUTTON_HEIGHT / 2],
+      [0, MAX_HEADER_HEIGHT + BUTTON_HEIGHT],
+      Extrapolation.CLAMP
+    ),
+  }));
+  const artistNameStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      y.value,
+      [-MAX_HEADER_HEIGHT / 2, 0, MAX_HEADER_HEIGHT / 2],
+      [0, 1, 0],
+      Extrapolation.CLAMP
+    ),
+  }));
   return (
     <Animated.ScrollView
-      onScroll={onScroll({ y })}
+      onScroll={({
+        nativeEvent: {
+          contentOffset: { y: value },
+        },
+      }) => {
+        y.value = value;
+      }}
       style={styles.container}
       showsVerticalScrollIndicator={false}
       scrollEventThrottle={1}
-      stickyHeaderIndices={[1]}
-    >
+      stickyHeaderIndices={[1]}>
       <View style={styles.cover}>
-        <Animated.View
-          style={[styles.gradient, { height }]}
-        >
+        <Animated.View style={[styles.gradient, gradientStyle]}>
           <LinearGradient
             style={StyleSheet.absoluteFill}
             start={[0, 0.3]}
@@ -53,7 +58,9 @@ export default ({ album: { artist, tracks }, y }: ContentProps) => {
           />
         </Animated.View>
         <View style={styles.artistContainer}>
-          <Animated.Text style={[styles.artist, { opacity }]}>{artist}</Animated.Text>
+          <Animated.Text style={[styles.artist, artistNameStyle]}>
+            {artist}
+          </Animated.Text>
         </View>
       </View>
       <View style={styles.header}>
@@ -61,14 +68,12 @@ export default ({ album: { artist, tracks }, y }: ContentProps) => {
         <ShufflePlay />
       </View>
       <View style={styles.tracks}>
-        {
-          tracks.map((track, key) => (
-            <Track
-              index={key + 1}
-              {...{ track, key, artist }}
-            />
-          ))
-        }
+        {tracks.map((track, key) => (
+          <Track
+            index={key + 1}
+            {...{ track, key, artist }}
+          />
+        ))}
       </View>
     </Animated.ScrollView>
   );
