@@ -17,7 +17,7 @@ import LiquidSwipe, { assets as liquidSwipeAssets } from "./src/LiquidSwipe";
 import UberEats, {
   assets as uberEatsAssets,
   fonts as uberEatsFonts,
-} from "./src/UberEats";
+} from "../season3/UberEats/components";
 import iPod, { fonts as ipodFonts } from "./src/iPod";
 import AppleActivity from "./src/AppleActivity";
 import CoinbasePro from "./src/CoinbasePro";
