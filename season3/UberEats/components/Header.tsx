@@ -69,7 +69,9 @@ export default ({ y, tabs, scrollView }: HeaderProps) => {
         HEADER_IMAGE_HEIGHT - MIN_HEADER_HEIGHT,
         0,
       ],
-      Extrapolation.CLAMP
+      {
+        extrapolateRight: Extrapolation.CLAMP,
+      }
     )
   );
   const opacity = transition;

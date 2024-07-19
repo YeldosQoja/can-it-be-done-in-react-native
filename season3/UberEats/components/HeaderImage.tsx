@@ -30,11 +30,15 @@ export default ({ y }: HeaderImageProps) => {
       y.value,
       [-100, 0],
       [HEADER_IMAGE_HEIGHT + 100, HEADER_IMAGE_HEIGHT],
-      Extrapolation.CLAMP
-    )
+      {
+        extrapolateRight: Extrapolation.CLAMP,
+      }
+    ),
   );
   const top = useDerivedValue(() =>
-    interpolate(y.value, [0, 100], [0, -100], Extrapolation.CLAMP)
+    interpolate(y.value, [0, 100], [0, -100], {
+      extrapolateLeft: Extrapolation.CLAMP,
+    })
   );
   return (
     <Animated.Image
