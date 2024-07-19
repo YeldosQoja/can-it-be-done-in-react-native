@@ -1,6 +1,7 @@
 import React, { RefObject, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import Animated, {
+  clamp,
   interpolate,
   SharedValue,
   useDerivedValue,
@@ -8,7 +9,6 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import MaskedView from "@react-native-masked-view/masked-view";
-
 import Tabs from "./Tabs";
 import { TabModel } from "./Content";
 
@@ -33,6 +33,7 @@ export default ({ transition, y, tabs, scrollView }: TabHeaderProps) => {
   const [measurements, setMeasurements] = useState<number[]>(
     new Array(tabs.length).fill(0)
   );
+
   const opacity = transition;
   const indexTransition = useDerivedValue(() => withTiming(index.value));
   const width = useDerivedValue(() =>
@@ -66,15 +67,20 @@ export default ({ transition, y, tabs, scrollView }: TabHeaderProps) => {
   const maskElement = <Animated.View {...{ style }} />;
 
   useDerivedValue(() => {
+    const scrollY = clamp(
+      y.value,
+      tabs[0].anchor,
+      tabs[tabs.length - 1].anchor + 1
+    );
     for (let i = 0; i < tabs.length; i++) {
       if (
-        tabs[i].anchor <= y.value &&
-        (i + 1 === tabs.length || y.value <= tabs[i + 1].anchor)
+        tabs[i].anchor <= scrollY &&
+        (i + 1 === tabs.length || scrollY < tabs[i + 1].anchor)
       ) {
         index.value = i;
       }
     }
-  });
+  }, [tabs]);
 
   return (
     <Animated.View style={[styles.container, { opacity }]}>
@@ -85,48 +91,33 @@ export default ({ transition, y, tabs, scrollView }: TabHeaderProps) => {
         }}>
         <Tabs
           onMeasurement={(i, m) => {
-            measurements[i] = m;
-            setMeasurements([...measurements]);
+            setMeasurements(measurements.map((val, j) => (j === i ? m : val)));
           }}
           {...{ tabs, translateX }}
         />
       </Animated.View>
       <View>
-        <Animated.View
-          style={[
-            style,
-            Platform.OS === "android"
-              ? {
-                  backgroundColor: "transparent",
-                  borderColor: "black",
-                  borderWidth: 1,
-                }
-              : {},
-          ]}
-        />
+        <Animated.View style={style} />
       </View>
-      {Platform.OS === "ios" && (
-        // see https://github.com/react-native-community/react-native-masked-view/issues/22
-        <MaskedView
-          style={StyleSheet.absoluteFill}
-          maskElement={maskElement}>
-          <Animated.View
-            style={{
-              ...StyleSheet.absoluteFillObject,
-              transform: [{ translateX }],
-            }}>
-            <Tabs
-              active
-              onPress={(i) => {
-                if (scrollView.current) {
-                  scrollView.current.scrollTo({ y: tabs[i].anchor + 1 });
-                }
-              }}
-              {...{ tabs, translateX }}
-            />
-          </Animated.View>
-        </MaskedView>
-      )}
+      <MaskedView
+        style={StyleSheet.absoluteFill}
+        maskElement={maskElement}>
+        <Animated.View
+          style={{
+            ...StyleSheet.absoluteFillObject,
+            transform: [{ translateX }],
+          }}>
+          <Tabs
+            active
+            onPress={(i) => {
+              if (scrollView.current) {
+                scrollView.current.scrollTo({ y: tabs[i].anchor + 1 });
+              }
+            }}
+            {...{ tabs, translateX }}
+          />
+        </Animated.View>
+      </MaskedView>
     </Animated.View>
   );
 };

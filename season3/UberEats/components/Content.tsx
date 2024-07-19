@@ -184,7 +184,6 @@ export default ({ y, onMeasurement }: ContentProps) => {
           ))}
         </View>
       ))}
-      <View style={{ height }} />
     </>
   );
 };

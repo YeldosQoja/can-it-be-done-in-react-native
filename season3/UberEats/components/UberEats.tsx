@@ -41,8 +41,7 @@ export default () => {
         }}>
         <Content
           onMeasurement={(index, tab) => {
-            tabs[index] = tab;
-            setTabs([...tabs]);
+            setTabs(tabs.map((t, j) => (j === index ? tab : t)));
           }}
           {...{ y }}
         />
