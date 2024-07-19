@@ -1,6 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { TouchableWithoutFeedback } from "react-native-gesture-handler";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 const styles = StyleSheet.create({
   container: {
@@ -25,7 +24,7 @@ interface TabProps {
 
 export default ({ name, color, onMeasurement, onPress }: TabProps) => {
   return (
-    <TouchableWithoutFeedback {...{ onPress }}>
+    <Pressable {...{ onPress }}>
       <View
         onLayout={
           onMeasurement
@@ -40,6 +39,6 @@ export default ({ name, color, onMeasurement, onPress }: TabProps) => {
       >
         <Text style={[styles.text, { color }]}>{name}</Text>
       </View>
-    </TouchableWithoutFeedback>
+    </Pressable>
   );
 };

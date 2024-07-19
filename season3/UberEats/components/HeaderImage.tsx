@@ -1,12 +1,14 @@
 import React from "react";
 import { Dimensions, StyleSheet } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  SharedValue,
+  useDerivedValue,
+} from "react-native-reanimated";
 
-const { Extrapolate, interpolate } = Animated;
 const { height: wHeight, width: wWidth } = Dimensions.get("window");
-
-export const backgroundImage = require("./assets/background.jpeg");
-
+export const backgroundImage = require("../assets/background.jpeg");
 export const HEADER_IMAGE_HEIGHT = wHeight / 3;
 const styles = StyleSheet.create({
   image: {
@@ -19,20 +21,21 @@ const styles = StyleSheet.create({
 });
 
 interface HeaderImageProps {
-  y: Animated.Value<number>;
+  y: SharedValue<number>;
 }
 
 export default ({ y }: HeaderImageProps) => {
-  const height = interpolate(y, {
-    inputRange: [-100, 0],
-    outputRange: [HEADER_IMAGE_HEIGHT + 100, HEADER_IMAGE_HEIGHT],
-    extrapolateRight: Extrapolate.CLAMP,
-  });
-  const top = interpolate(y, {
-    inputRange: [0, 100],
-    outputRange: [0, -100],
-    extrapolateLeft: Extrapolate.CLAMP,
-  });
+  const height = useDerivedValue(() =>
+    interpolate(
+      y.value,
+      [-100, 0],
+      [HEADER_IMAGE_HEIGHT + 100, HEADER_IMAGE_HEIGHT],
+      Extrapolation.CLAMP
+    )
+  );
+  const top = useDerivedValue(() =>
+    interpolate(y.value, [0, 100], [0, -100], Extrapolation.CLAMP)
+  );
   return (
     <Animated.Image
       source={backgroundImage}

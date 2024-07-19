@@ -2,8 +2,12 @@
 import React from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 import { AntDesign as Icon } from "@expo/vector-icons";
-import Animated, { Extrapolate, interpolate } from "react-native-reanimated";
-
+import Animated, {
+  Extrapolation,
+  interpolate,
+  SharedValue,
+  useDerivedValue,
+} from "react-native-reanimated";
 import { HEADER_IMAGE_HEIGHT } from "./HeaderImage";
 import { MIN_HEADER_HEIGHT } from "./Header";
 
@@ -112,19 +116,22 @@ export interface TabModel {
 }
 
 interface ContentProps {
-  y: Animated.Node<number>;
+  y: SharedValue<number>;
   onMeasurement: (index: number, tab: TabModel) => void;
 }
 
 export default ({ y, onMeasurement }: ContentProps) => {
-  const opacity = interpolate(y, {
-    inputRange: [
-      HEADER_IMAGE_HEIGHT - MIN_HEADER_HEIGHT - 100,
-      HEADER_IMAGE_HEIGHT - MIN_HEADER_HEIGHT,
-    ],
-    outputRange: [1, 0],
-    extrapolate: Extrapolate.CLAMP,
-  });
+  const opacity = useDerivedValue(() =>
+    interpolate(
+      y.value,
+      [
+        HEADER_IMAGE_HEIGHT - MIN_HEADER_HEIGHT - 100,
+        HEADER_IMAGE_HEIGHT - MIN_HEADER_HEIGHT,
+      ],
+      [1, 0],
+      Extrapolation.CLAMP
+    )
+  );
   return (
     <>
       <View style={styles.placeholder} />
@@ -133,7 +140,12 @@ export default ({ y, onMeasurement }: ContentProps) => {
         <View style={styles.info}>
           <Text style={styles.text}>Opens at 11:30 AM</Text>
           <View style={styles.ratings}>
-            <Icon name="star" color="#f4c945" size={24} style={styles.icon} />
+            <Icon
+              name="star"
+              color="#f4c945"
+              size={24}
+              style={styles.icon}
+            />
             <Text style={styles.text}>(186)</Text>
           </View>
         </View>
@@ -155,13 +167,16 @@ export default ({ y, onMeasurement }: ContentProps) => {
             nativeEvent: {
               layout: { y: anchor },
             },
-          }) => onMeasurement(index, { name, anchor: anchor - 142 })}
-        >
+          }) => onMeasurement(index, { name, anchor: anchor - 142 })}>
           <Text style={styles.title1}>{name}</Text>
           {menuItems.map(({ title, description, price }, j) => (
-            <View style={styles.item} key={j}>
+            <View
+              style={styles.item}
+              key={j}>
               <Text style={styles.title}>{title}</Text>
-              <Text style={styles.description} numberOfLines={2}>
+              <Text
+                style={styles.description}
+                numberOfLines={2}>
                 {description}
               </Text>
               <Text style={styles.price}>{price}</Text>

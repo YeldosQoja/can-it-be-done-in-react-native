@@ -1,18 +1,13 @@
 import React, { RefObject, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import Animated, {
-  Value,
-  and,
-  block,
-  cond,
-  greaterOrEq,
   interpolate,
-  lessOrEq,
-  set,
-  useCode,
+  SharedValue,
+  useDerivedValue,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
-import MaskedView from "@react-native-community/masked-view";
-import { withTransition } from "react-native-redash";
+import MaskedView from "@react-native-masked-view/masked-view";
 
 import Tabs from "./Tabs";
 import { TabModel } from "./Content";
@@ -27,35 +22,41 @@ const styles = StyleSheet.create({
 });
 
 interface TabHeaderProps {
-  transition: Animated.Node<number>;
-  y: Animated.Node<number>;
+  transition: SharedValue<number>;
+  y: SharedValue<number>;
   tabs: TabModel[];
   scrollView: RefObject<Animated.ScrollView>;
 }
 
 export default ({ transition, y, tabs, scrollView }: TabHeaderProps) => {
-  const index = new Value<number>(0);
+  const index = useSharedValue<number>(0);
   const [measurements, setMeasurements] = useState<number[]>(
     new Array(tabs.length).fill(0)
   );
   const opacity = transition;
-  const indexTransition = withTransition(index);
-  const width = interpolate(indexTransition, {
-    inputRange: tabs.map((_, i) => i),
-    outputRange: measurements,
-  });
-  const translateX = interpolate(indexTransition, {
-    inputRange: tabs.map((_tab, i) => i),
-    outputRange: measurements.map((_, i) => {
-      return (
-        -1 *
-          measurements
-            .filter((_measurement, j) => j < i)
-            .reduce((acc, m) => acc + m, 0) -
-        8 * i
-      );
-    }),
-  });
+  const indexTransition = useDerivedValue(() => withTiming(index.value));
+  const width = useDerivedValue(() =>
+    interpolate(
+      indexTransition.value,
+      tabs.map((_, i) => i),
+      measurements
+    )
+  );
+  const translateX = useDerivedValue(() =>
+    interpolate(
+      indexTransition.value,
+      tabs.map((_tab, i) => i),
+      measurements.map((_, i) => {
+        return (
+          -1 *
+            measurements
+              .filter((_measurement, j) => j < i)
+              .reduce((acc, m) => acc + m, 0) -
+          8 * i
+        );
+      })
+    )
+  );
   const style = {
     borderRadius: 24,
     backgroundColor: "black",
@@ -63,31 +64,25 @@ export default ({ transition, y, tabs, scrollView }: TabHeaderProps) => {
     flex: 1,
   };
   const maskElement = <Animated.View {...{ style }} />;
-  useCode(
-    () =>
-      block(
-        tabs.map((tab, i) =>
-          cond(
-            i === tabs.length - 1
-              ? greaterOrEq(y, tab.anchor)
-              : and(
-                  greaterOrEq(y, tab.anchor),
-                  lessOrEq(y, tabs[i + 1].anchor)
-                ),
-            set(index, i)
-          )
-        )
-      ),
-    [index, tabs, y]
-  );
+
+  useDerivedValue(() => {
+    for (let i = 0; i < tabs.length; i++) {
+      if (
+        tabs[i].anchor <= y.value &&
+        (i + 1 === tabs.length || y.value <= tabs[i + 1].anchor)
+      ) {
+        index.value = i;
+      }
+    }
+  });
+
   return (
     <Animated.View style={[styles.container, { opacity }]}>
       <Animated.View
         style={{
           ...StyleSheet.absoluteFillObject,
           transform: [{ translateX }],
-        }}
-      >
+        }}>
         <Tabs
           onMeasurement={(i, m) => {
             measurements[i] = m;
@@ -112,13 +107,14 @@ export default ({ transition, y, tabs, scrollView }: TabHeaderProps) => {
       </View>
       {Platform.OS === "ios" && (
         // see https://github.com/react-native-community/react-native-masked-view/issues/22
-        <MaskedView style={StyleSheet.absoluteFill} maskElement={maskElement}>
+        <MaskedView
+          style={StyleSheet.absoluteFill}
+          maskElement={maskElement}>
           <Animated.View
             style={{
               ...StyleSheet.absoluteFillObject,
               transform: [{ translateX }],
-            }}
-          >
+            }}>
             <Tabs
               active
               onPress={(i) => {
